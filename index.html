@@ -396,7 +396,8 @@
             <p id="brandSubtitle"></p>
           </div>
         </a>
-        <nav class="menu" id="topMenu"></nav><a id="adminButtonTop" class="btn primary" href="#" target="_blank" rel="noopener">Área restrita</a>
+        <nav class="menu" id="topMenu"></nav>
+        <a id="adminButtonTop" class="btn primary" href="#" target="_blank" rel="noopener">Área restrita</a>
       </div>
     </header>
 
@@ -535,6 +536,23 @@
       }
     }
 
+    function setLoaderStatus(text) {
+      const el = document.getElementById('loaderStatus');
+      if (el) el.textContent = text;
+    }
+
+    function hideLoader() {
+      const loader = document.getElementById('loader');
+      const siteWrap = document.getElementById('siteWrap');
+      if (siteWrap) siteWrap.style.display = 'block';
+      if (loader) {
+        loader.classList.add('hide');
+        setTimeout(() => {
+          if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+        }, 400);
+      }
+    }
+
     function setThemeFromConfig(config) {
       const root = document.documentElement;
       if (norm(config.bg_cor_1)) root.style.setProperty('--bg', config.bg_cor_1);
@@ -559,7 +577,7 @@
 
     async function fetchApi(action) {
       const res = await fetch(`${API_URL}?acao=${encodeURIComponent(action)}&t=${Date.now()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Falha ao carregar API pública');
+      if (!res.ok) throw new Error('Falha ao carregar API');
       const data = await res.json();
       if (!data.ok) throw new Error(data.message || 'API retornou erro');
       return data.data || {};
