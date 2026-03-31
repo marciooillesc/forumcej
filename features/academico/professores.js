@@ -508,7 +508,26 @@ async function _submeterFormulario(container, professores) {
     }
   }
 
-  label.textContent = tipo === 'simulado' ? '⏳ Gerando questões com IA...' : '⏳ Publicando...';
+  // Para simulados, exibe contador regressivo para o professor não achar que travou
+  let _timerSimulado = null;
+  if (tipo === 'simulado') {
+    let seg = 0;
+    const msgs = [
+      '⏳ Gerando questões com IA...',
+      '🤖 Consultando IA...',
+      '📝 Formulando questões...',
+      '🔍 Revisando alternativas...',
+      '💾 Quase pronto...',
+    ];
+    label.textContent = msgs[0];
+    _timerSimulado = setInterval(() => {
+      seg++;
+      const msg = msgs[Math.min(Math.floor(seg / 15), msgs.length - 1)];
+      label.textContent = `${msg} (${seg}s)`;
+    }, 1000);
+  } else {
+    label.textContent = '⏳ Publicando...';
+  }
 
   try {
     await publicarConteudo({
@@ -519,11 +538,14 @@ async function _submeterFormulario(container, professores) {
       assunto, tipo_questao: 'objetiva', qtd_questoes: qtd,
     });
 
+    if (_timerSimulado) clearInterval(_timerSimulado);
+
     _todos = await buscarConteudos(true);
     setEstado({ dadosApi: _todos });
     _renderListagem(container, listarProfessores(_todos));
 
   } catch (err) {
+    if (_timerSimulado) clearInterval(_timerSimulado);
     erroEl.innerHTML = `<div class="aviso-erro"><span>⚠️</span><span>${err.message}</span></div>`;
     erroEl.style.display = '';
     btn.disabled = false;
@@ -555,13 +577,14 @@ async function _uploadArquivo(arquivo, container) {
       try {
         const resp = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             acao:      'upload_arquivo',
             nome:      arquivo.name,
             tipo_mime: arquivo.type,
             base64,
           }),
+          redirect: 'follow',
         });
         setProgresso(95, 'Processando...');
         const json = await resp.json();
