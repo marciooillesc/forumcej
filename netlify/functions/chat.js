@@ -26,7 +26,8 @@ export async function handler(event) {
 
         const data = await res.json();
 
-        if (!data.error) {
+        // 🔥 ESSA LINHA É A CHAVE
+        if (res.ok && !data.error) {
           return {
             statusCode: 200,
             body: JSON.stringify(data)
