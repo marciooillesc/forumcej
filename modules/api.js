@@ -128,15 +128,32 @@ export async function publicarConteudo(dados) {
     throw new Error('API_URL não configurada.');
   }
 
-  // Apps Script exige Content-Type: text/plain para evitar preflight CORS.
-  // O doPost lê e.postData.contents que continua sendo JSON válido.
-  // redirect: 'follow' é obrigatório — o Apps Script redireciona antes de responder.
-  const resposta = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(dados),
-    redirect: 'follow',
-  });
+  // Simulados chamam a OpenRouter e podem demorar até ~90s.
+  // AbortController com 3 min evita que o browser abandone antes do Apps Script responder.
+  const isSimulado = dados.tipo === 'simulado';
+  const timeoutMs  = isSimulado ? 3 * 60 * 1000 : 30 * 1000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let resposta;
+  try {
+    // Apps Script exige Content-Type: text/plain para evitar preflight CORS.
+    // redirect: 'follow' é obrigatório — o Apps Script redireciona antes de responder.
+    resposta = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dados),
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('A geração demorou demais. Tente com menos questões ou tente novamente.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!resposta.ok) {
     throw new Error(`Erro HTTP ${resposta.status}: ${resposta.statusText}`);
