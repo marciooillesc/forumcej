@@ -83,7 +83,7 @@ function _htmlLista(conteudos) {
       </div>
       <div class="conteudo-item__acoes">
         <button class="btn btn--ghost btn--sm" data-open="${i}">Abrir</button>
-        <button class="btn btn--danger-ghost btn--sm" data-remove="${i}" data-titulo="${_esc(c.titulo)}" data-prof="${_esc(c.professor)}">🗑</button>
+        <button class="btn btn--danger-ghost btn--sm" data-remove="${i}" data-id="${c.id}" data-titulo="${_esc(c.titulo)}">🗑</button>
       </div>
     </div>
   `).join('');
@@ -111,7 +111,7 @@ function _bindLista(container, conteudos, usuario) {
       e.stopPropagation();
       if (!confirm(`Remover "${btn.dataset.titulo}"?`)) return;
       btn.disabled = true;
-      try { await removerConteudo(btn.dataset.titulo, btn.dataset.prof); await renderProfessores(container); }
+      try { await removerConteudo(btn.dataset.id); await renderProfessores(container); }
       catch(err) { alert('Erro: '+err.message); btn.disabled = false; }
     });
   });
