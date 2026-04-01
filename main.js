@@ -9,6 +9,7 @@ import { inicializarRouter, registrarRota, navegar } from './modules/router.js';
 import { renderProfessores } from './features/academico/professores.js';
 import { renderAlunos } from './features/academico/alunos.js';
 import { JOGOS, buscarJogo } from './features/jogos/index.js';
+import { login } from './modules/auth.js';
 
 // ── ELEMENTOS DOM ──────────────────────────────────────────────────────────────
 const elTelaInicial  = document.getElementById('tela-inicial');
@@ -252,8 +253,7 @@ function _bindBotoesInicio() {
 function _bindBotaoVoltar() {
   btnVoltar?.addEventListener('click', _voltarInicio);
 }
-import { login } from "./modules/auth.js";
-import { setEstado } from "./modules/state.js";
+
 
 function abrirLogin() {
   const app = document.getElementById("app");
