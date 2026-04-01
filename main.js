@@ -27,6 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
   _registrarRotas();
   _bindBotoesInicio();
   _bindBotaoVoltar();
+  btnJogos.addEventListener("click", () => {
+    setEstado({ modo: "jogos" });
+    navegar("jogos-home");
+  });
+
+  btnAcademico.addEventListener("click", () => {
+    setEstado({ modo: "academico" });
+    navegar("professores");
+  });
 });
 
 // ── ROTAS ──────────────────────────────────────────────────────────────────────
