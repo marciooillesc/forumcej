@@ -1,7 +1,7 @@
-export function renderProfessores(container) {
+export function renderAlunos(container) {
   container.innerHTML = `
     <div style="text-align:center;margin-top:100px">
-      <h2>Área Acadêmica</h2>
+      <h2>Área do Aluno</h2>
       <p>Faça login para acessar</p>
     </div>
   `;
