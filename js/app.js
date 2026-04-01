@@ -1,1 +1,0 @@
-function go(p){location.href="pages/"+p+".html";}
