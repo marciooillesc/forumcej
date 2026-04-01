@@ -250,8 +250,18 @@ function _renderJogosHome(container) {
 }
 
 function _bindBotoesInicio() {
-  btnJogos?.addEventListener('click', () => _ativarModo('jogos'));
-  btnAcademico?.addEventListener('click', () => {
+  // Helper: dispara ação tanto em click quanto em touchend (Android fix)
+  function bindAcao(btn, acao) {
+    if (!btn) return;
+    btn.addEventListener('click', acao);
+    btn.addEventListener('touchend', e => {
+      e.preventDefault(); // evita o click duplo que o browser dispara depois
+      acao();
+    }, { passive: false });
+  }
+
+  bindAcao(btnJogos, () => _ativarModo('jogos'));
+  bindAcao(btnAcademico, () => {
     const { usuario } = getEstado();
     if (!usuario) {
       _abrirModalLogin();
@@ -372,6 +382,3 @@ function _mostrarErroModal(el, msg) {
 function _bindBotaoVoltar() {
   btnVoltar?.addEventListener('click', _voltarInicio);
 }
-
-
-
