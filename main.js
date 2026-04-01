@@ -9,7 +9,7 @@ import { inicializarRouter, registrarRota, navegar } from './modules/router.js';
 import { renderProfessores } from './features/academico/professores.js';
 import { renderAlunos } from './features/academico/alunos.js';
 import { JOGOS, buscarJogo } from './features/jogos/index.js';
-import { login } from './modules/auth.js';
+import { login, logout, restaurarSessao } from './modules/auth.js';
 
 // ── ELEMENTOS DOM ──────────────────────────────────────────────────────────────
 const elTelaInicial  = document.getElementById('tela-inicial');
@@ -23,36 +23,17 @@ const btnJogos       = document.getElementById('btn-jogos');
 const btnAcademico   = document.getElementById('btn-academico');
 
 // ── INICIALIZAÇÃO ──────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   inicializarRouter(elConteudoView);
   _registrarRotas();
   _bindBotoesInicio();
   _bindBotaoVoltar();
-  btnJogos.addEventListener("click", () => {
-    setEstado({ modo: "jogos" });
-    navegar("jogos-home");
-  });
 
-  btnAcademico.addEventListener("click", () => {
-  const estado = getEstado();
-
-  // 🔒 se não está logado
-  if (!estado.usuario) {
-    abrirLogin();
-    return;
+  // Restaura sessão persistente
+  const perfil = await restaurarSessao();
+  if (perfil) {
+    _atualizarBotaoAcademico(perfil);
   }
-
-  // 🔒 se não aprovado
-  if (estado.usuario.status !== "aprovado") {
-    alert("Aguardando aprovação");
-    return;
-  }
-
-  // ✅ libera acesso
-  setEstado({ modo: "academico" });
-  navegar("professores");
-});
-
 });
 
 // ── ROTAS ──────────────────────────────────────────────────────────────────────
@@ -172,19 +153,39 @@ function _construirSidebarJogos() {
 }
 
 function _construirSidebarAcademico() {
+  const { usuario } = getEstado();
+  const isProfOuAdmin = usuario?.tipo === 'professor' || usuario?.tipo === 'admin';
+
   elSidebarNav.innerHTML = `
     <div class="sidebar__secao-titulo">Área</div>
+    ${isProfOuAdmin ? `
     <div class="sidebar__item" data-rota="professores">
       <span class="sidebar__item-icon">👩‍🏫</span>
-      <span class="sidebar__item-label">Professores</span>
-    </div>
+      <span class="sidebar__item-label">Professor</span>
+    </div>` : ''}
     <div class="sidebar__item" data-rota="alunos">
       <span class="sidebar__item-icon">🎒</span>
       <span class="sidebar__item-label">Alunos</span>
     </div>
+    <div class="sidebar__secao-titulo" style="margin-top:auto">Conta</div>
+    <div class="sidebar__item sidebar__item--usuario">
+      <span class="sidebar__item-icon">👤</span>
+      <span class="sidebar__item-label">${usuario?.nome || ''}</span>
+    </div>
+    <div class="sidebar__item sidebar__item--sair" id="btn-logout">
+      <span class="sidebar__item-icon">🚪</span>
+      <span class="sidebar__item-label">Sair</span>
+    </div>
   `;
 
   _bindSidebarNav();
+
+  document.getElementById('btn-logout')?.addEventListener('click', async () => {
+    await logout();
+    const sub = btnAcademico?.querySelector('.btn__sub');
+    if (sub) sub.textContent = 'Conteúdos e materiais';
+    _voltarInicio();
+  });
 }
 
 function _bindSidebarNav() {
@@ -244,52 +245,126 @@ function _renderJogosHome(container) {
   });
 }
 
-// ── BINDINGS GERAIS ────────────────────────────────────────────────────────────
 function _bindBotoesInicio() {
   btnJogos?.addEventListener('click', () => _ativarModo('jogos'));
-  btnAcademico?.addEventListener('click', () => _ativarModo('academico'));
+  btnAcademico?.addEventListener('click', () => {
+    const { usuario } = getEstado();
+    if (!usuario) {
+      _abrirModalLogin();
+    } else {
+      _entrarAcademico(usuario);
+    }
+  });
+}
+
+/** Atualiza label do botão acadêmico após sessão restaurada */
+function _atualizarBotaoAcademico(perfil) {
+  if (!btnAcademico) return;
+  const sub = btnAcademico.querySelector('.btn__sub');
+  if (sub) sub.textContent = `Olá, ${perfil.nome.split(' ')[0]}`;
+}
+
+/** Entra no modo acadêmico roteando por tipo */
+function _entrarAcademico(usuario) {
+  _ativarModo('academico');
+  // rota padrão por tipo
+  setTimeout(() => {
+    if (usuario.tipo === 'professor' || usuario.tipo === 'admin') {
+      navegar('professores');
+    } else {
+      navegar('alunos');
+    }
+  }, 400); // aguarda animação de transição
+}
+
+/** Modal de login estilizado */
+function _abrirModalLogin() {
+  // Cria overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-login-overlay';
+  overlay.innerHTML = `
+    <div class="modal-login">
+      <button class="modal-login__fechar" id="modal-fechar">✕</button>
+      <div class="modal-login__logo">
+        <span class="modal-login__sigla">RPR</span>
+        <span class="modal-login__nome">Área Acadêmica</span>
+      </div>
+      <p class="modal-login__desc">Acesse com seu cadastro aprovado</p>
+
+      <div class="modal-login__campo">
+        <label>E-mail</label>
+        <input id="ml-email" type="email" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <div class="modal-login__campo">
+        <label>Senha</label>
+        <input id="ml-senha" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <div id="ml-erro" class="modal-login__erro oculto"></div>
+
+      <button class="modal-login__btn" id="ml-entrar">Entrar</button>
+
+      <p class="modal-login__rodape">
+        Não tem conta?
+        <a href="/cadastro" class="modal-login__link">Cadastre-se</a>
+      </p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Anima entrada
+  requestAnimationFrame(() => overlay.classList.add('ativo'));
+
+  const fechar = () => {
+    overlay.classList.remove('ativo');
+    setTimeout(() => overlay.remove(), 300);
+  };
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) fechar(); });
+  document.getElementById('modal-fechar').addEventListener('click', fechar);
+
+  const btnEntrar = document.getElementById('ml-entrar');
+  const elErro    = document.getElementById('ml-erro');
+
+  btnEntrar.addEventListener('click', async () => {
+    const email = document.getElementById('ml-email').value.trim();
+    const senha = document.getElementById('ml-senha').value;
+
+    if (!email || !senha) {
+      _mostrarErroModal(elErro, 'Preencha e-mail e senha.');
+      return;
+    }
+
+    btnEntrar.disabled = true;
+    btnEntrar.textContent = 'Entrando…';
+
+    const resultado = await login(email, senha);
+
+    if (resultado.erro) {
+      _mostrarErroModal(elErro, resultado.erro);
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = 'Entrar';
+      return;
+    }
+
+    const perfil = resultado.perfil;
+    _atualizarBotaoAcademico(perfil);
+    fechar();
+    _entrarAcademico(perfil);
+  });
+
+  // Enter submete
+  [document.getElementById('ml-email'), document.getElementById('ml-senha')]
+    .forEach(el => el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') btnEntrar.click();
+    }));
+}
+
+function _mostrarErroModal(el, msg) {
+  el.textContent = msg;
+  el.classList.remove('oculto');
 }
 
 function _bindBotaoVoltar() {
   btnVoltar?.addEventListener('click', _voltarInicio);
-}
-
-
-function abrirLogin() {
-  const app = document.getElementById("app");
-
-  app.innerHTML = `
-    <div style="max-width:400px;margin:80px auto;text-align:center">
-      <h2>Área Acadêmica</h2>
-
-      <input id="email" placeholder="Email" style="display:block;width:100%;margin:10px 0;padding:10px"/>
-      <input id="senha" type="password" placeholder="Senha" style="display:block;width:100%;margin:10px 0;padding:10px"/>
-
-      <button id="btn-login" style="padding:10px 20px">Entrar</button>
-
-      <p style="margin-top:10px">
-        Não tem conta? <a href="/cadastro">Cadastre-se</a>
-      </p>
-    </div>
-  `;
-
-  document.getElementById("btn-login").onclick = async () => {
-    const email = document.getElementById("email").value;
-    const senha = document.getElementById("senha").value;
-
-    const user = await login(email, senha);
-
-    if (!user) return;
-
-    if (user.status !== "aprovado") {
-      alert("Aguardando aprovação");
-      return;
-    }
-
-    setEstado({ usuario: user });
-
-    // entra no acadêmico após login
-    setEstado({ modo: "academico" });
-    navegar("professores");
-  };
 }
