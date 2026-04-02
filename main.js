@@ -36,8 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Detecta link de redefinição de senha (hash #type=recovery)
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   if (hashParams.get('type') === 'recovery') {
-    history.replaceState(null, '', window.location.pathname); // limpa o hash da URL
-    _abrirModalNovaSenha();
+    history.replaceState(null, '', window.location.pathname);
+    // Aguarda o Supabase processar o token e estabelecer a sessão
+    const { supabase } = await import('./modules/supabase.js');
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        _abrirModalNovaSenha();
+      }
+    });
     return;
   }
 
