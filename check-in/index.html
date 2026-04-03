@@ -251,6 +251,9 @@
     </div>
   </div>
 
+  <!-- Carregar SDK Supabase ANTES dos módulos -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script type="module">
     import { gerarTokenCheckIn, confirmarPresencaComToken } from '../modules/check-in-simples.js';
     import { restaurarSessao } from '../modules/auth.js';
