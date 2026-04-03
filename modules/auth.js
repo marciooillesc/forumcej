@@ -47,6 +47,8 @@ export async function restaurarSessao() {
   return null;
 }
 
+const ADMIN_EMAIL = 'marciooillesc@gmail.com';
+
 async function _carregarPerfil(userId) {
   const { data, error } = await supabase
     .from('usuarios')
@@ -54,5 +56,12 @@ async function _carregarPerfil(userId) {
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) return null;
-  return data;
+  return _aplicarPrivilegiosAdmin(data);
+}
+
+// Admin master assume todos os papeis para facilitar testes.
+// Todas as verificacoes de tipo no projeto passam automaticamente.
+function _aplicarPrivilegiosAdmin(perfil) {
+  if (perfil?.email !== ADMIN_EMAIL) return perfil;
+  return { ...perfil, tipo: 'admin', status: 'aprovado', isAdmin: true, isProfessor: true, isAluno: true };
 }
