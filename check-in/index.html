@@ -252,8 +252,8 @@
   </div>
 
   <script type="module">
-    import { gerarTokenCheckIn, confirmarPresencaComToken, restaurarSessao } from '../modules/check-in-simples.js';
-    import { restaurarSessao as restaurarAuth } from '../modules/auth.js';
+    import { gerarTokenCheckIn, confirmarPresencaComToken } from '../modules/check-in-simples.js';
+    import { restaurarSessao } from '../modules/auth.js';
 
     // ────────────────────────────────────────────────────────────────────────────
     // INICIALIZAÇÃO
@@ -264,7 +264,7 @@
       const token = urlParams.get('token');
 
       // Usuário logado
-      const usuario = await restaurarAuth();
+      const usuario = await restaurarSessao();
 
       if (!usuario) {
         mostrarErro('tela-carregando', 'Você não está logado', 'Faça login primeiro');
