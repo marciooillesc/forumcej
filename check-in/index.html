@@ -29,7 +29,7 @@
 
     .logo { font-size: 2.5rem; margin-bottom: 1rem; }
     h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #333; }
-    .subtitulo { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .subtitulo { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; line-height: 1.5; }
 
     .card {
       background: #f9fafb;
@@ -39,12 +39,12 @@
       border-left: 4px solid #667eea;
       text-align: left;
     }
-    .card-label {
-      font-weight: 600; color: #6b7280; margin-bottom: 0.4rem;
-      font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;
-    }
+    .card--verde { border-left-color: #10b981; }
+    .card-label { font-weight: 600; color: #6b7280; margin-bottom: 0.4rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-valor { font-size: 1.05rem; font-weight: 600; color: #333; }
+    .card-sub   { font-size: 0.85rem; color: #6b7280; margin-top: 0.2rem; }
 
-    input[type="text"], input[type="date"] {
+    input[type="email"], input[type="date"] {
       width: 100%;
       padding: 0.75rem;
       border: 1.5px solid #e5e7eb;
@@ -61,22 +61,23 @@
       font-weight: 600; cursor: pointer; width: 100%;
       transition: all 0.2s; margin-bottom: 0.75rem;
     }
-    .botao:hover { background: #5568d3; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+    .botao:hover  { background: #5568d3; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
     .botao:active { transform: translateY(0); }
-    .botao--secundario { background: #6b7280; }
-    .botao--secundario:hover { background: #4b5563; }
+    .botao--sec   { background: #6b7280; }
+    .botao--sec:hover  { background: #4b5563; }
     .botao--verde { background: #10b981; }
     .botao--verde:hover { background: #059669; }
+    .botao:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+    .mensagem-erro {
+      background: #fef2f2; border-left: 4px solid #ef4444;
+      padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+      color: #991b1b; font-weight: 500; font-size: 0.95rem;
+    }
     .mensagem-sucesso {
       background: #ecfdf5; border-left: 4px solid #10b981;
       padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
       color: #047857; font-weight: 500;
-    }
-    .mensagem-erro {
-      background: #fef2f2; border-left: 4px solid #ef4444;
-      padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
-      color: #991b1b; font-weight: 500;
     }
 
     .spinner {
@@ -87,7 +88,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     #qr-imagem {
-      max-width: 280px; width: 100%; border-radius: 12px;
+      max-width: 260px; width: 100%; border-radius: 12px;
       margin: 0.75rem auto; display: block;
       border: 4px solid #667eea;
     }
@@ -100,8 +101,8 @@
 
     .instrucao { font-size: 0.9rem; color: #6b7280; margin-bottom: 1.25rem; line-height: 1.5; }
 
-    details summary { cursor: pointer; font-size: 0.85rem; color: #6b7280; margin-bottom: 0.5rem; }
-    .row-data { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    details summary { cursor: pointer; font-size: 0.85rem; color: #6b7280; }
+    .row-data { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
     .row-data input { flex: 1; }
     .row-data .botao { width: auto; padding: 0.75rem 1rem; margin: 0; }
 
@@ -138,12 +139,12 @@
       <div class="badge-data" id="prof-data-label"></div>
       <img id="qr-imagem" src="" alt="QR Code de Presença">
       <p class="instrucao">📷 Alunos: abra a câmera e aponte para este QR code</p>
-      <button class="botao botao--secundario" onclick="novoQR()">🔄 Gerar novo QR code</button>
+      <button class="botao botao--sec" onclick="novoQR()">🔄 Gerar novo QR code</button>
     </div>
 
     <div id="prof-erro" style="display:none;">
       <div class="mensagem-erro" id="prof-erro-msg"></div>
-      <button class="botao botao--secundario" onclick="gerarQRAutomatico()">🔄 Tentar novamente</button>
+      <button class="botao botao--sec" onclick="gerarQRAutomatico()">🔄 Tentar novamente</button>
     </div>
 
     <details style="margin-top:1rem; text-align:left;">
@@ -155,27 +156,39 @@
     </details>
   </div>
 
-  <!-- ALUNO — APÓS ESCANEAR QR -->
+  <!-- ALUNO — PASSO 1: e-mail -->
   <div id="tela-aluno">
-    <div class="logo">✅</div>
-    <h1>Confirmar Presença</h1>
-    <p class="subtitulo">Preencha seus dados para registrar presença</p>
+    <div class="logo">📋</div>
+    <h1>Check-in de Presença</h1>
+    <p class="subtitulo">Digite o e-mail que você usou para se cadastrar</p>
 
     <div class="badge-data" id="aluno-data-label"></div>
 
-    <div class="card">
-      <div class="card-label">Seu nome completo</div>
-      <input type="text" id="aluno-nome-input" placeholder="Ex: João da Silva" autocomplete="name">
+    <!-- Passo 1: digitar e-mail -->
+    <div id="passo-email">
+      <div class="card">
+        <div class="card-label">Seu e-mail cadastrado</div>
+        <input type="email" id="aluno-email-input"
+          placeholder="seuemail@exemplo.com"
+          autocomplete="email"
+          autocapitalize="none"
+          onkeydown="if(event.key==='Enter') buscarAluno()">
+      </div>
+      <button class="botao" id="btn-buscar" onclick="buscarAluno()">🔍 Continuar</button>
     </div>
 
-    <div class="card">
-      <div class="card-label">Turma</div>
-      <input type="text" id="aluno-turma-input" placeholder="Ex: 9A, 1º EM...">
+    <!-- Passo 2: confirmar quem é -->
+    <div id="passo-confirmar" style="display:none;">
+      <div class="card card--verde">
+        <div class="card-label">Aluno encontrado ✅</div>
+        <div class="card-valor" id="aluno-nome-encontrado"></div>
+        <div class="card-sub"   id="aluno-turma-encontrada"></div>
+      </div>
+      <button class="botao botao--verde" id="btn-confirmar" onclick="confirmarPresenca()">✅ Confirmar minha presença</button>
+      <button class="botao botao--sec"   onclick="voltarEmail()">← Não sou eu</button>
     </div>
 
-    <button class="botao botao--verde" onclick="confirmarPresenca()">✅ Confirmar minha presença</button>
-
-    <div id="aluno-erro" style="display:none; margin-top:0.5rem;">
+    <div id="aluno-erro" style="display:none;">
       <div class="mensagem-erro" id="aluno-erro-msg"></div>
     </div>
   </div>
@@ -186,7 +199,7 @@
     <h1>Presença confirmada!</h1>
     <p class="subtitulo" id="confirmado-nome"></p>
     <div class="mensagem-sucesso">✅ Sua presença foi registrada com sucesso!</div>
-    <p class="instrucao">Pode fechar esta aba.</p>
+    <p class="instrucao">Você já pode fechar esta aba.</p>
   </div>
 
   <!-- ERRO GERAL -->
@@ -201,22 +214,36 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
   const SUPABASE_URL = "https://gdjpwwmdfssvokuuibwz.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkanB3d21kZnNzdm9rdXVpYnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjExMjUsImV4cCI6MjA5MDYzNzEyNX0.JAHc5TVF4lR34nQ2UluQvYFZP8gxOvVDnM8_7mhTxl4";
   const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // ── utilitários ──────────────────────────────────────────────────────────────
+  // ── estado em memória (nada fica na URL) ──────────────────────────────────
+  let _checkInId   = null;
+  let _alunoId     = null;
+  let _alunoNome   = null;
+
+  // ── utilitários ───────────────────────────────────────────────────────────
   function mostrarTela(id) {
     ['tela-carregando','tela-professor','tela-aluno','tela-confirmado','tela-erro-geral']
-      .forEach(t => document.getElementById(t).style.display = (t === id ? 'block' : 'none'));
+      .forEach(t => document.getElementById(t).style.display = t === id ? 'block' : 'none');
   }
 
   function mostrarErroGeral(titulo, msg) {
     document.getElementById('erro-titulo').textContent = titulo;
-    document.getElementById('erro-msg').textContent = msg;
+    document.getElementById('erro-msg').textContent    = msg;
     mostrarTela('tela-erro-geral');
+  }
+
+  function mostrarErroAluno(msg) {
+    const el = document.getElementById('aluno-erro');
+    document.getElementById('aluno-erro-msg').textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function ocultarErroAluno() {
+    document.getElementById('aluno-erro').style.display = 'none';
   }
 
   function dataHoje() { return new Date().toISOString().split('T')[0]; }
@@ -231,7 +258,7 @@
     return Array.from({length: 50}, () => c[Math.floor(Math.random() * c.length)]).join('');
   }
 
-  // ── professor: gerar QR ──────────────────────────────────────────────────────
+  // ── professor: gerar QR ───────────────────────────────────────────────────
   async function gerarQR(data) {
     document.getElementById('prof-gerando').style.display = 'block';
     document.getElementById('prof-qr').style.display     = 'none';
@@ -239,22 +266,42 @@
 
     const token = gerarToken();
 
-    const { error } = await _sb.from('check_in').insert([{
-      token,
-      data,
-      presenca: false,
-    }]);
+    // Salva token em sessionStorage (só o professor, no mesmo dispositivo)
+    sessionStorage.setItem('checkin_token_ativo', token);
+
+    const { error } = await _sb.from('check_in').insert([{ token, data, presenca: false }]);
 
     document.getElementById('prof-gerando').style.display = 'none';
 
     if (error) {
       document.getElementById('prof-erro-msg').textContent = error.message;
-      document.getElementById('prof-erro').style.display = 'block';
+      document.getElementById('prof-erro').style.display   = 'block';
       return;
     }
 
-    const url    = `${window.location.origin}/check-in?token=${token}`;
-    const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
+    // QR aponta para /check-in limpo — o token NÃO vai na URL
+    // O aluno recebe o link educacaodigital.iprpr.dev.br/check-in
+    // O token é armazenado via sessionStorage no dispositivo do professor
+    // Para o aluno funcionar, o QR grava o token no servidor e o aluno
+    // identifica pela sessão única gerada abaixo (id do registro)
+
+    // URL do QR: site limpo + parâmetro interno (id do registro, não o token)
+    const { data: reg } = await _sb
+      .from('check_in')
+      .select('id')
+      .eq('token', token)
+      .single();
+
+    if (!reg) {
+      document.getElementById('prof-erro-msg').textContent = 'Erro ao confirmar criação do QR.';
+      document.getElementById('prof-erro').style.display   = 'block';
+      return;
+    }
+
+    const baseUrl = window.location.origin;
+    // URL do QR usa o ID (uuid), não o token — impossível de adivinhar e não expõe o token
+    const urlQR  = `${baseUrl}/check-in?s=${reg.id}`;
+    const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(urlQR)}`;
 
     document.getElementById('qr-imagem').src = qrUrl;
     document.getElementById('prof-data-label').textContent = `📅 ${formatarData(data)}`;
@@ -262,80 +309,143 @@
   }
 
   window.gerarQRAutomatico = () => gerarQR(dataHoje());
-
-  window.gerarQRManual = () => {
+  window.gerarQRManual     = () => {
     const d = document.getElementById('input-data').value;
     if (!d) { alert('Selecione uma data'); return; }
     gerarQR(d);
   };
-
   window.novoQR = () => gerarQR(document.getElementById('input-data').value || dataHoje());
 
-  // ── aluno: tela após escanear ────────────────────────────────────────────────
-  async function mostrarTelaAluno(token) {
+  // ── aluno: tela após escanear ─────────────────────────────────────────────
+  async function mostrarTelaAluno(sessionId) {
+    // Busca o registro pelo ID (uuid público, sem expor token)
     const { data: reg, error } = await _sb
       .from('check_in')
       .select('id, data, presenca')
-      .eq('token', token)
+      .eq('id', sessionId)
       .single();
 
     if (error || !reg) {
-      mostrarErroGeral('QR Code inválido', 'Este QR code não existe ou já expirou. Peça ao professor para gerar um novo.');
+      mostrarErroGeral('QR Code inválido', 'Este QR code não é válido. Peça ao professor para gerar um novo.');
       return;
     }
 
     if (reg.presenca) {
-      mostrarErroGeral('QR já utilizado', 'Este QR code já foi usado. Peça ao professor para gerar um novo.');
+      mostrarErroGeral('QR já utilizado', 'Este QR code já foi utilizado. Peça ao professor para gerar um novo.');
       return;
     }
 
-    window._checkInId = reg.id;
+    _checkInId = reg.id;
+
+    // Limpa URL — aluno vê só educacaodigital.iprpr.dev.br/check-in
+    window.history.replaceState({}, '', '/check-in');
+
     document.getElementById('aluno-data-label').textContent = `📅 ${formatarData(reg.data)}`;
     mostrarTela('tela-aluno');
-    document.getElementById('aluno-nome-input').focus();
+    setTimeout(() => document.getElementById('aluno-email-input').focus(), 100);
   }
 
-  // ── aluno: confirmar presença ────────────────────────────────────────────────
-  window.confirmarPresenca = async function() {
-    const nome  = document.getElementById('aluno-nome-input').value.trim();
-    const turma = document.getElementById('aluno-turma-input').value.trim();
-    const erroDiv = document.getElementById('aluno-erro');
-    const erroMsg = document.getElementById('aluno-erro-msg');
+  // ── aluno: buscar por e-mail ──────────────────────────────────────────────
+  window.buscarAluno = async function() {
+    ocultarErroAluno();
+    const email = document.getElementById('aluno-email-input').value.trim().toLowerCase();
 
-    erroDiv.style.display = 'none';
-
-    if (!nome) {
-      erroMsg.textContent = 'Por favor, informe seu nome completo.';
-      erroDiv.style.display = 'block';
+    if (!email) {
+      mostrarErroAluno('Digite seu e-mail.');
       return;
     }
+
+    const btn = document.getElementById('btn-buscar');
+    btn.disabled = true;
+    btn.textContent = 'Buscando...';
+
+    const { data: usuario, error } = await _sb
+      .from('usuarios')
+      .select('id, nome, tipo, status, turma')
+      .eq('email', email)
+      .single();
+
+    btn.disabled = false;
+    btn.textContent = '🔍 Continuar';
+
+    if (error || !usuario) {
+      mostrarErroAluno('E-mail não encontrado. Verifique se é o mesmo usado no cadastro.');
+      return;
+    }
+
+    if (usuario.status !== 'aprovado') {
+      mostrarErroAluno('Seu cadastro ainda não foi aprovado. Fale com o professor.');
+      return;
+    }
+
+    // Guarda em memória (não na URL, não no localStorage)
+    _alunoId   = usuario.id;
+    _alunoNome = usuario.nome;
+
+    document.getElementById('aluno-nome-encontrado').textContent  = usuario.nome;
+    document.getElementById('aluno-turma-encontrada').textContent = usuario.turma ? `Turma: ${usuario.turma}` : usuario.tipo;
+    document.getElementById('passo-email').style.display    = 'none';
+    document.getElementById('passo-confirmar').style.display = 'block';
+  };
+
+  window.voltarEmail = function() {
+    _alunoId   = null;
+    _alunoNome = null;
+    ocultarErroAluno();
+    document.getElementById('passo-confirmar').style.display = 'none';
+    document.getElementById('passo-email').style.display     = 'block';
+    document.getElementById('aluno-email-input').value = '';
+    document.getElementById('aluno-email-input').focus();
+  };
+
+  // ── aluno: confirmar presença ─────────────────────────────────────────────
+  window.confirmarPresenca = async function() {
+    ocultarErroAluno();
+
+    const btn = document.getElementById('btn-confirmar');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
 
     const { error } = await _sb.from('check_in').update({
-      aluno_nome:  nome,
-      aluno_turma: turma || null,
-      presenca:    true,
-      timestamp:   new Date().toISOString(),
-    }).eq('id', window._checkInId);
+      aluno_id:   _alunoId,
+      aluno_nome: _alunoNome,
+      presenca:   true,
+      timestamp:  new Date().toISOString(),
+    }).eq('id', _checkInId);
+
+    btn.disabled = false;
+    btn.textContent = '✅ Confirmar minha presença';
 
     if (error) {
-      erroMsg.textContent = error.message;
-      erroDiv.style.display = 'block';
+      mostrarErroAluno(error.message);
       return;
     }
 
-    document.getElementById('confirmado-nome').textContent = `Olá, ${nome}! ✌️`;
+    document.getElementById('confirmado-nome').textContent = `Olá, ${_alunoNome}! ✌️`;
     mostrarTela('tela-confirmado');
   };
 
-  // ── init ─────────────────────────────────────────────────────────────────────
+  // ── init ──────────────────────────────────────────────────────────────────
   (async function inicializar() {
-    const token = new URLSearchParams(window.location.search).get('token');
-    if (token) {
-      await mostrarTelaAluno(token);
-    } else {
+    const params    = new URLSearchParams(window.location.search);
+    const sessionId = params.get('s');      // aluno veio do QR
+    const modoProf  = params.get('prof');   // professor abre com ?prof=1
+
+    if (sessionId) {
+      // Aluno escaneou QR
+      await mostrarTelaAluno(sessionId);
+
+    } else if (modoProf === '1') {
+      // Professor abre o telão manualmente: /check-in?prof=1
+      // Limpa o parâmetro da URL
+      window.history.replaceState({}, '', '/check-in');
       mostrarTela('tela-professor');
       document.getElementById('input-data').value = dataHoje();
       await gerarQRAutomatico();
+
+    } else {
+      // Acesso direto sem parâmetros → redireciona para o site
+      window.location.replace('/');
     }
   })();
 </script>
