@@ -10,6 +10,7 @@ export const META = {
   nome: 'Quiz',
   descricao: 'Perguntas e Verdadeiro ou Falso · vários temas',
   emoji: '🧠',
+};
 
 const CAT_INFORMATICA = [
   {
